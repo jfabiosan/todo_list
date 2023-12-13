@@ -1,6 +1,6 @@
 # App Lista de tarefas Todo- List
 
-Projeyo fei to com Flutter
+Projeto feito com Flutter
 
 #
 
