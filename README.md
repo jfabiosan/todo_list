@@ -1,12 +1,14 @@
-# todo
+# App Lista de tarefas Todo- List
 
-A new Flutter project.
+Projeyo fei to com Flutter
 
-## Getting Started
+#
 
-This project is a starting point for a Flutter application.
+App de lista de tarefas para treinar aprendizado na platorma dio.me flutter Specialist
 
-A few resources to get you started if this is your first Flutter project:
+Utilizado exemplo do site https://medium.com/flutter-community/simple-to-do-list-app-in-flutter-26abc50db741 
+
+Autor Yoganathan Shiv e professor da dio.me Danilo Perez
 
 - [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
 - [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
