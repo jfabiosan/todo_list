@@ -10,13 +10,24 @@ class TodoListPage extends StatefulWidget {
 class _TodoListPageState extends State<TodoListPage> {
   final List<TodoItem> _todoList = <TodoItem>[];
   final TextEditingController _textFieldController = TextEditingController();
+  bool _showOnlyIncomplete = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Lista de Tarefas'),
+        title: const Text('Lista'),
         backgroundColor: Colors.lime,
+        actions: [
+          Switch(
+            value: _showOnlyIncomplete,
+            onChanged: (value) {
+              setState(() {
+                _showOnlyIncomplete = value;
+              });
+            },
+          ),
+        ],
       ),
       body: ListView(
         children: _getItems(),
@@ -101,7 +112,9 @@ class _TodoListPageState extends State<TodoListPage> {
   List<Widget> _getItems() {
     final List<Widget> todoWidgets = <Widget>[];
     for (TodoItem todoItem in _todoList) {
-      todoWidgets.add(_buildTodoItem(todoItem));
+      if (!_showOnlyIncomplete || !todoItem.isCompleted) {
+        todoWidgets.add(_buildTodoItem(todoItem));
+      }
     }
     return todoWidgets;
   }
