@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'shared_preferences_util.dart';
 
 class TodoListPage extends StatefulWidget {
-  const TodoListPage({super.key});
+  final SharedPreferencesUtil prefsUtil;
+  const TodoListPage({super.key, required this.prefsUtil});
 
   @override
   State<TodoListPage> createState() => _TodoListPageState();
@@ -13,10 +15,30 @@ class _TodoListPageState extends State<TodoListPage> {
   bool _showOnlyIncomplete = false;
 
   @override
+  void initState() {
+    super.initState();
+    _loadTodoList();
+  }
+
+  Future<void> _loadTodoList() async {
+    List<TodoItem> todoList = await widget.prefsUtil.getTodoList(
+        'todoList', (Map<String, dynamic> json) => TodoItem.fromJson(json));
+    setState(() {
+      _todoList.clear();
+      _todoList.addAll(todoList);
+    });
+  }
+
+  Future<void> _saveTodoList() async {
+    await widget.prefsUtil
+        .saveTodoList('todoList', _todoList, (TodoItem item) => item.toJson());
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Lista'),
+        title: const Text('Lista de Tarefas'),
         backgroundColor: Colors.lime,
         actions: [
           Switch(
@@ -45,6 +67,7 @@ class _TodoListPageState extends State<TodoListPage> {
       _todoList.add(TodoItem(title: title, isCompleted: false));
     });
     _textFieldController.clear();
+    _saveTodoList();
   }
 
   Widget _buildTodoItem(TodoItem todoItem) {
@@ -125,4 +148,18 @@ class TodoItem {
   bool isCompleted;
 
   TodoItem({required this.title, required this.isCompleted});
+
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'isCompleted': isCompleted,
+    };
+  }
+
+  factory TodoItem.fromJson(Map<String, dynamic> json) {
+    return TodoItem(
+      title: json['title'],
+      isCompleted: json['isCompleted'],
+    );
+  }
 }
