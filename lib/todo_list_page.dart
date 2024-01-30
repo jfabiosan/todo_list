@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'shared_preferences_util.dart';
 import 'dialog_utils.dart';
 import 'todo_item.dart';
+import 'edit_todo_dialog.dart';
 
 class TodoListPage extends StatefulWidget {
   final SharedPreferencesUtil prefsUtil;
@@ -57,7 +58,7 @@ class _TodoListPageState extends State<TodoListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Lista de Tarefas'),
+        title: const Text('Lista Tarefas'),
         backgroundColor: Colors.lime,
         actions: [
           Switch(
@@ -120,21 +121,42 @@ class _TodoListPageState extends State<TodoListPage> {
       ),
       child: Card(
         child: ListTile(
-          title: Text(
-            style: const TextStyle(
-              fontSize: 20.0,
-              fontWeight: FontWeight.bold,
-            ),
-            todoItem.title,
+          title: Row(
+            children: [
+              Text(
+                style: const TextStyle(
+                  fontSize: 20.0,
+                  fontWeight: FontWeight.bold,
+                ),
+                todoItem.title,
+              ),
+              const SizedBox(width: 8.0),
+              const Icon(Icons.edit),
+            ],
           ),
           trailing: Switch(
-              value: todoItem.isCompleted,
-              onChanged: (bool value) {
+            value: todoItem.isCompleted,
+            onChanged: (bool value) {
+              setState(() {
+                todoItem.isCompleted = value;
+              });
+              _saveTodoList(); // Save the todo list when an item is dismissed
+            },
+          ),
+          onTap: () async {
+            await EditTodoDialog.displayEditTaskDialog(
+              context,
+              todoItem,
+              (updatedTodoItem) {
                 setState(() {
-                  todoItem.isCompleted = value;
+                  // Atualize o item na lista
+                  int index = _todoList.indexOf(todoItem);
+                  _todoList[index] = updatedTodoItem;
                 });
-                _saveTodoList(); // Save the todo list when an item is dismissed
-              }),
+                _saveTodoList();
+              },
+            );
+          },
         ),
       ),
     );

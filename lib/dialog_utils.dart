@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:todo/date_picker.dart';
-import 'package:todo/time_picker.dart'; // Importe o TimePickerWidget
+import 'package:todo/time_picker.dart';
 
 class DialogUtils {
   static Future<void> displayAddTaskDialog(BuildContext context,
@@ -26,11 +26,13 @@ class DialogUtils {
                   },
                 ),
                 DatePickerWidget(
+                  initialDate: DateTime.now(),
                   onDateTimeSelected: (date) {
                     selectedDate = date;
                   },
                 ),
                 TimePickerWidget(
+                  initialTime: TimeOfDay.now(),
                   onTimeSelected: (time) {
                     selectedTime = time;
                   },
