@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'shared_preferences_util.dart';
+import 'dialog_utils.dart';
+import 'todo_item.dart';
 
 class TodoListPage extends StatefulWidget {
   final SharedPreferencesUtil prefsUtil;
@@ -18,6 +21,7 @@ class _TodoListPageState extends State<TodoListPage> {
   void initState() {
     super.initState();
     _loadTodoList();
+    _loadShowOnlyIncomplete();
   }
 
   Future<void> _loadTodoList() async {
@@ -29,9 +33,24 @@ class _TodoListPageState extends State<TodoListPage> {
     });
   }
 
+  Future<void> _loadShowOnlyIncomplete() async {
+    bool showOnlyIncomplete =
+        await widget.prefsUtil.getBool('showOnlyIncomplete') ?? false;
+    setState(() {
+      _showOnlyIncomplete = showOnlyIncomplete;
+    });
+  }
+
+  Future<void> _saveShowOnlyIncomplete(bool value) async {
+    await widget.prefsUtil.setBool('showOnlyIncomplete', value);
+  }
+
   Future<void> _saveTodoList() async {
-    await widget.prefsUtil
-        .saveTodoList('todoList', _todoList, (TodoItem item) => item.toJson());
+    await widget.prefsUtil.saveTodoList(
+      'todoList',
+      _todoList,
+      (TodoItem item) => item.toJson(),
+    );
   }
 
   @override
@@ -46,6 +65,7 @@ class _TodoListPageState extends State<TodoListPage> {
             onChanged: (value) {
               setState(() {
                 _showOnlyIncomplete = value;
+                _saveShowOnlyIncomplete(value);
               });
             },
           ),
@@ -62,9 +82,17 @@ class _TodoListPageState extends State<TodoListPage> {
     );
   }
 
-  void _addTodoItem(String title) {
+  void _addTodoItem(
+    String title,
+    DateTime selectedDate,
+    TimeOfDay selectedTime,
+  ) {
     setState(() {
-      _todoList.add(TodoItem(title: title, isCompleted: false));
+      _todoList.add(TodoItem(
+          title: title,
+          isCompleted: false,
+          date: selectedDate,
+          time: selectedTime));
     });
     _textFieldController.clear();
     _saveTodoList();
@@ -77,9 +105,10 @@ class _TodoListPageState extends State<TodoListPage> {
         setState(() {
           _todoList.remove(todoItem);
         });
+        _saveTodoList(); // Save the todo list when an item is dismissed
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("${todoItem.title}removido"),
+            content: Text("${todoItem.title} removido"),
           ),
         );
       },
@@ -89,77 +118,73 @@ class _TodoListPageState extends State<TodoListPage> {
         padding: const EdgeInsets.only(right: 20.0),
         child: const Icon(Icons.delete, color: Colors.white),
       ),
-      child: ListTile(
-        title: Text(todoItem.title),
-        trailing: Switch(
-            value: todoItem.isCompleted,
-            onChanged: (bool value) {
-              setState(() {
-                todoItem.isCompleted = value;
-              });
-            }),
+      child: Card(
+        child: ListTile(
+          title: Text(
+            style: const TextStyle(
+              fontSize: 20.0,
+              fontWeight: FontWeight.bold,
+            ),
+            todoItem.title,
+          ),
+          trailing: Switch(
+              value: todoItem.isCompleted,
+              onChanged: (bool value) {
+                setState(() {
+                  todoItem.isCompleted = value;
+                });
+                _saveTodoList(); // Save the todo list when an item is dismissed
+              }),
+        ),
       ),
     );
   }
 
-  Future<Future> _displayDialog(BuildContext context) async {
-    return showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text("Adicione a tarefa na lista"),
-            content: TextField(
-              controller: _textFieldController,
-              decoration:
-                  const InputDecoration(hintText: "Digite a tarefa aqui"),
-            ),
-            actions: <Widget>[
-              ElevatedButton(
-                child: const Text('Cancelar'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-              ElevatedButton(
-                child: const Text("Adicionar"),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _addTodoItem(_textFieldController.text);
-                },
-              ),
-            ],
-          );
-        });
+  Future<void> _displayDialog(BuildContext context) async {
+    await DialogUtils.displayAddTaskDialog(context, _addTodoItem);
   }
 
   List<Widget> _getItems() {
     final List<Widget> todoWidgets = <Widget>[];
+    final DateFormat dateFormatter = DateFormat('dd/MM/yyyy');
+    const TimeOfDayFormat timeFormatter = TimeOfDayFormat.HH_colon_mm;
+
     for (TodoItem todoItem in _todoList) {
       if (!_showOnlyIncomplete || !todoItem.isCompleted) {
         todoWidgets.add(_buildTodoItem(todoItem));
+        todoWidgets.add(Padding(
+          padding: const EdgeInsets.only(left: 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Data: ${dateFormatter.format(todoItem.date.toLocal())}",
+                style: const TextStyle(
+                  fontSize: 19.0,
+                  color: Color.fromARGB(255, 228, 112, 112),
+                ),
+              ),
+              const SizedBox(height: 8.0),
+              Text(
+                "Hora: ${formatTimeOfDay(todoItem.time, timeFormatter)}",
+                style: const TextStyle(
+                  fontSize: 18.0,
+                  color: Color.fromARGB(255, 228, 112, 112),
+                ),
+              ),
+            ],
+          ),
+        ));
       }
     }
     return todoWidgets;
   }
-}
 
-class TodoItem {
-  String title;
-  bool isCompleted;
-
-  TodoItem({required this.title, required this.isCompleted});
-
-  Map<String, dynamic> toJson() {
-    return {
-      'title': title,
-      'isCompleted': isCompleted,
-    };
-  }
-
-  factory TodoItem.fromJson(Map<String, dynamic> json) {
-    return TodoItem(
-      title: json['title'],
-      isCompleted: json['isCompleted'],
-    );
+  String formatTimeOfDay(TimeOfDay timeOfDay, TimeOfDayFormat format) {
+    if (format == TimeOfDayFormat.HH_colon_mm) {
+      return '${timeOfDay.hour}:${timeOfDay.minute}';
+    } else {
+      return timeOfDay.format(context);
+    }
   }
 }

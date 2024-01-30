@@ -8,6 +8,14 @@ class SharedPreferencesUtil {
     _prefs = await SharedPreferences.getInstance();
   }
 
+  Future<bool?> getBool(String key) async {
+    return _prefs.getBool(key);
+  }
+
+  Future<void> setBool(String key, bool value) async {
+    await _prefs.setBool(key, value);
+  }
+
   Future<List<T>> getTodoList<T>(
       String key, T Function(Map<String, dynamic>) fromJson) async {
     List<String>? todoList = _prefs.getStringList(key);
